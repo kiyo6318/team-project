@@ -51,6 +51,9 @@
                 <% end %>
               </li>
             </ul>
+            <span>
+              <%= link_to "❌アジェンダを削除",agenda_path(agenda.id),method: :delete,data:{confirm:"本当に削除しますか？"} %>
+            </span>
           </li>
         <% end %>
       </ul>
