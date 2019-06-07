@@ -15,7 +15,11 @@ class TeamsController < ApplicationController
     @team = Team.new
   end
 
-  def edit; end
+  def edit
+    unless current_user.id == @team.owner_id
+      redirect_to @team, notice:"権限がありません"
+    end
+  end
 
   def create
     @team = Team.new(team_params)
@@ -30,11 +34,15 @@ class TeamsController < ApplicationController
   end
 
   def update
-    if @team.update(team_params)
-      redirect_to @team, notice: 'チーム更新に成功しました！'
+    if current_user.id == @team.owner_id
+      if @team.update(team_params)
+        redirect_to @team, notice: 'チーム更新に成功しました！'
+      else
+        flash.now[:error] = '保存に失敗しました、、'
+        render :edit
+      end
     else
-      flash.now[:error] = '保存に失敗しました、、'
-      render :edit
+      redirect_to @team,notice: "権限がありません"
     end
   end
 
@@ -45,6 +53,17 @@ class TeamsController < ApplicationController
 
   def dashboard
     @team = current_user.keep_team_id ? Team.find(current_user.keep_team_id) : current_user.teams.first
+  end
+
+  def owner_change
+    @team = Team.find_by(id:params[:team_id])
+    if current_user.id == @team.owner_id
+      @team.update(owner_id: params[:id])
+      TeamMailer.owner_change_mail(@team).deliver
+      redirect_to @team,notice: "チームリーダーを変更しました！"
+    else
+      redirect_to @team,notice: "権限がありません"
+    end
   end
 
   private

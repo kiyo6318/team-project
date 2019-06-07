@@ -26,22 +26,26 @@ class AssignsController < ApplicationController
   end
 
   def assign_destroy(assign, assigned_user)
-    if assigned_user == assign.team.owner
-      'リーダーは削除できません。'
-    elsif Assign.where(user_id: assigned_user.id).count == 1
-      'このユーザーはこのチームにしか所属していないため、削除できません。'
-    elsif assign.destroy
-      set_next_team(assign, assigned_user)
-      'メンバーを削除しました。'
+    if current_user == assign.team.owner || current_user == assigned_user
+      if assigned_user == assign.team.owner
+        'リーダーは削除できません。'
+      elsif Assign.where(user_id: assigned_user.id).count == 1
+        'このユーザーはこのチームにしか所属していないため、削除できません。'
+      elsif assign.destroy
+        set_next_team(assign, assigned_user)
+        'メンバーを削除しました。'
+      else
+        'なんらかの原因で、削除できませんでした。'
+      end
     else
-      'なんらかの原因で、削除できませんでした。'
-    end    
-  end  
-  
+      '権限がありません'
+    end
+  end
+
   def email_reliable?(address)
     address.match(/\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i)
   end
-  
+
   def set_next_team(assign, assigned_user)
     another_team = Assign.find_by(user_id: assigned_user.id).team
     change_keep_team(assigned_user, another_team) if assigned_user.keep_team_id == assign.team_id
