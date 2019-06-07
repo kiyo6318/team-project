@@ -15,7 +15,11 @@ class TeamsController < ApplicationController
     @team = Team.new
   end
 
-  def edit; end
+  def edit
+    unless current_user.id == @team.owner_id
+      redirect_to @team, notice:"権限がありません"
+    end
+  end
 
   def create
     @team = Team.new(team_params)
@@ -30,11 +34,15 @@ class TeamsController < ApplicationController
   end
 
   def update
-    if @team.update(team_params)
-      redirect_to @team, notice: 'チーム更新に成功しました！'
+    if current_user.id == @team.owner_id
+      if @team.update(team_params)
+        redirect_to @team, notice: 'チーム更新に成功しました！'
+      else
+        flash.now[:error] = '保存に失敗しました、、'
+        render :edit
+      end
     else
-      flash.now[:error] = '保存に失敗しました、、'
-      render :edit
+      redirect_to @team,notice: "権限がありません"
     end
   end
 
